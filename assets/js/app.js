@@ -21,7 +21,11 @@ const MSGS_CARGA = [
 
 const $overlay = document.createElement("div");
 $overlay.id = "overlay-carga";
-$overlay.innerHTML = `<p class="overlay-msg"></p>`;
+$overlay.innerHTML = `
+  <div class="d-flex flex-column align-items-center gap-4">
+    <img src="./assets/img/logo.png" alt="Gourmet Go" class="loader-logo" />
+    <p class="overlay-msg"></p>
+  </div>`;
 document.body.appendChild($overlay);
 const $overlayMsg = $overlay.querySelector(".overlay-msg");
 let _overlayTimer = null;
@@ -122,8 +126,6 @@ class Receta {
     minimumResultsForSearch: 0,
     templateResult: (ingr) => $(`<span><img src="${ingr.strThumb}" class="img-ingr" /> ${ingr.strIngredient} <small>${ingr.strDescription || 'Sin Descripción'}</small></span>`)
   });
-
-  document.getElementById("page-loader").classList.add("oculto");
 
   $SELECT.on("select2:select", async () => {
     const ingrediente = $SELECT.val();
