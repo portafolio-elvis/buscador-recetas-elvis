@@ -126,4 +126,4 @@ No requiere instalación ni servidor de backend. Solo abre el archivo `index.htm
 
 ## Autor
 
-Elvis Andrade
+Proyecto desarrollado como ejercicio práctico del Módulo 9 del curso de JavaScript — SENCE.

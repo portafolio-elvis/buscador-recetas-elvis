@@ -16,6 +16,14 @@
   </head>
 
   <body class="bg-light">
+    <div id="page-loader">
+      <div class="d-flex flex-column align-items-center gap-4">
+        <img src="https://i.ibb.co/CK0NcM4G/logo-recetas2.png" alt="Gourmet Go" class="loader-logo" />
+        <div class="spinner-border text-light" style="width:3rem;height:3rem;" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+      </div>
+    </div>
     <template id="receta-template">
       <div class="col-12 col-md-6 col-lg-4">
         <div class="flip-card-container">
@@ -61,7 +69,6 @@
             class="navbar-logo"
           />
         </a>
-        <a class="nav-link" href="#contacto">Contacto</a>
       </div>
     </nav>
     <main class="container my-5">

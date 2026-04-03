@@ -10,6 +10,42 @@ const $TEMPLATE = document.querySelector("#receta-template");
 const MSG_FETCH_ERROR = '<div class="col-12"><p class="text-center text-muted">Lo sentimos, hubo un error al obtener la información de la API.</p></div>';
 const MSG_NO_RESULTS = '<div class="col-12"><p class="text-center text-muted">Lo sentimos, no se encontraron recetas. Intenta con otro ingrediente.</p></div>';
 
+const MSGS_CARGA = [
+  "Buscando recetas...",
+  "Encontrando los mejores platos...",
+  "Revisando los ingredientes...",
+  "Preparando los resultados...",
+  "Casi listo..."
+];
+
+
+const $overlay = document.createElement("div");
+$overlay.id = "overlay-carga";
+$overlay.innerHTML = `<p class="overlay-msg"></p>`;
+document.body.appendChild($overlay);
+const $overlayMsg = $overlay.querySelector(".overlay-msg");
+let _overlayTimer = null;
+
+function mostrarCarga() {
+  let idx = 0;
+  $overlayMsg.textContent = MSGS_CARGA[0];
+  $overlayMsg.style.animation = "none";
+  $overlay.classList.add("activo");
+
+  _overlayTimer = setInterval(() => {
+    idx = (idx + 1) % MSGS_CARGA.length;
+    $overlayMsg.style.animation = "none";
+    void $overlayMsg.offsetWidth;
+    $overlayMsg.style.animation = "msg-entrada 0.5s ease both";
+    $overlayMsg.textContent = MSGS_CARGA[idx];
+  }, 1600);
+}
+
+function ocultarCarga() {
+  clearInterval(_overlayTimer);
+  $overlay.classList.remove("activo");
+}
+
 class Receta {
   constructor({ idMeal: id, strMeal: nombre, strMealThumb: imagen }) {
     Object.assign(this, { id, nombre, imagen });
@@ -40,8 +76,15 @@ class Receta {
     $CLONE.querySelector(".flip-toggle").id = checkboxId;
     $CLONE.querySelector(".btn-ver-receta").setAttribute("for", checkboxId);
     $CLONE.querySelector(".btn-volver").setAttribute("for", checkboxId);
-    $CLONE.querySelector(".imagen").src = this.imagen;
-    $CLONE.querySelector(".imagen").alt = this.nombre;
+    const $col = $CLONE.querySelector(".col-12");
+    const $img = $CLONE.querySelector(".imagen");
+    $img.alt = this.nombre;
+    $img.addEventListener("load", () => {
+      $img.classList.add("loaded");
+      $col.classList.add("visible");
+    });
+    $img.addEventListener("error", () => $col.classList.add("visible"));
+    $img.src = this.imagen;
     $CLONE.querySelector(".nombre").textContent = this.nombre;
 
     const checkbox = $CLONE.querySelector(".flip-toggle");
@@ -73,26 +116,45 @@ class Receta {
       ...m
     })),
     placeholder: "Escribe un ingrediente...",
+    language: { searching: () => "Buscando..." },
     allowClear: true,
     width: "100%",
     minimumResultsForSearch: 0,
     templateResult: (ingr) => $(`<span><img src="${ingr.strThumb}" class="img-ingr" /> ${ingr.strIngredient} <small>${ingr.strDescription || 'Sin Descripción'}</small></span>`)
   });
 
+  document.getElementById("page-loader").classList.add("oculto");
+
   $SELECT.on("select2:select", async () => {
     const ingrediente = $SELECT.val();
     if (!ingrediente) return;
+
+    mostrarCarga();
 
     try {
       const { meals } = await (await fetch(API_FILTER + ingrediente)).json();
       $RESULTADOS.innerHTML = "";
 
-      meals
-        ? meals.forEach((meal) =>
-            $RESULTADOS.appendChild(new Receta(meal).toHTML())
-          )
-        : ($RESULTADOS.innerHTML = MSG_NO_RESULTS);
+      if (meals) {
+        let visibles = 0;
+        const meta = Math.min(3, meals.length);
+
+        meals.forEach((meal) => {
+          const $frag = new Receta(meal).toHTML();
+          const $img = $frag.querySelector(".imagen");
+          const onCargada = () => {
+            visibles++;
+            if (visibles >= meta) ocultarCarga();
+          };
+          $img.addEventListener("load", onCargada, { once: true });
+          $img.addEventListener("error", onCargada, { once: true });
+          $RESULTADOS.appendChild($frag);
+        });
+      } else {
+        $RESULTADOS.innerHTML = MSG_NO_RESULTS;
+      }
     } catch (err) {
+      ocultarCarga();
       $RESULTADOS.innerHTML = MSG_FETCH_ERROR;
       console.error("Error:", err);
     }
